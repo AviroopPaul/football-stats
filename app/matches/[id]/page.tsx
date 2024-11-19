@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { Suspense, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import TeamModal from "../../components/TeamModal";
 
 async function getMatchDetails(id: string) {

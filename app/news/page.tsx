@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { getFootballNews } from '@/app/services/newsService';
 import Image from 'next/image';
 import Link from 'next/link';
