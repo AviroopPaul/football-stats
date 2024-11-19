@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -8,18 +8,12 @@ import { Suspense, useState, useEffect } from "react";
 import TeamModal from "../../components/TeamModal";
 
 async function getMatchDetails(id: string) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/match/${id}`
-  );
+  const res = await fetch(`/api/match/${id}`);
   if (!res.ok) throw new Error("Failed to fetch match details");
   return res.json();
 }
 
-export default function MatchDetails({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function MatchDetails({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
       <Link
@@ -48,7 +42,7 @@ function MatchContent({ id }: { id: string }) {
         const data = await getMatchDetails(id);
         setMatch(data);
       } catch (err) {
-        setError('Failed to fetch match details');
+        setError("Failed to fetch match details");
       } finally {
         setIsLoading(false);
       }
