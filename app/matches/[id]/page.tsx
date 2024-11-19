@@ -32,7 +32,18 @@ export default function MatchDetails({ params }: { params: { id: string } }) {
 function MatchContent({ id }: { id: string }) {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [match, setMatch] = useState<any>(null);
+  interface Match {
+    id: string;
+    competition: {
+      name: string;
+      emblem: string;
+    };
+    matchday: number;
+    utcDate: string;
+    // Add other relevant fields as needed
+  }
+
+  const [match, setMatch] = useState<Match | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
