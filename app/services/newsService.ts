@@ -1,20 +1,41 @@
-import { NewsResponse } from '@/app/types/news';
+import { NewsResponse } from "@/app/types/news";
 
-export async function getFootballNews(): Promise<NewsResponse> {
-  const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY;
-  const query = encodeURIComponent(
-    '(soccer OR football) AND ' +
-    '(premier league OR bundesliga OR la liga OR serie a OR champions league OR world cup OR fifa OR uefa OR ' +
-    'messi OR ronaldo OR haaland OR mbappe OR salah OR de bruyne OR bellingham OR vinicius)'
-  );
+export async function getFootballNews(category?: string): Promise<NewsResponse> {
+  const apiKey = process.env.NEXT_PUBLIC_GNEWS_API_KEY;
+  
+  // Combine "football" with the additional category if provided
+  const searchTerm = category ? `european football ${category}` : "european football and soccer";
+  const query = encodeURIComponent(searchTerm);
+
   const response = await fetch(
-    `https://newsapi.org/v2/everything?q=${query}&sortBy=publishedAt&language=en&apiKey=${apiKey}`,
+    `https://gnews.io/api/v4/search?q=${query}&lang=en&sortby=publishedAt&apikey=${apiKey}`,
     { next: { revalidate: 3600 } }
   );
 
   if (!response.ok) {
-    throw new Error('Failed to fetch news');
+    const errorData = await response.json().catch(() => null);
+    throw new Error(
+      `Failed to fetch news: ${response.status} ${response.statusText}` +
+        (errorData ? ` - ${JSON.stringify(errorData)}` : "")
+    );
   }
 
-  return response.json();
-} 
+  const data = await response.json();
+
+  if (!data || !data.articles) {
+    throw new Error(`Invalid API response structure: ${JSON.stringify(data)}`);
+  }
+
+  return {
+    articles: data.articles.map((article: any) => ({
+      title: article.title,
+      description: article.description,
+      url: article.url,
+      urlToImage: article.image,
+      publishedAt: article.publishedAt,
+      source: {
+        name: article.source.name,
+      },
+    })),
+  };
+}
