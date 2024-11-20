@@ -92,7 +92,7 @@ async function sendNewsletter() {
 
     if (subscribers.length === 0) {
       console.log("No subscribers found");
-      return;
+      return { success: true, message: "No subscribers found" };
     }
 
     // Fetch news
@@ -100,15 +100,19 @@ async function sendNewsletter() {
 
     if (news.length === 0) {
       console.log("No news found for today");
-      return;
+      return { success: true, message: "No news found for today" };
     }
 
     const emailContent = formatNewsletterHTML(news);
 
-    // Send newsletter to each subscriber
-    for (const subscriber of subscribers) {
-      try {
-        await sgMail.send({
+    // Process subscribers in batches of 10
+    const batchSize = 10;
+    const results = [];
+
+    for (let i = 0; i < subscribers.length; i += batchSize) {
+      const batch = subscribers.slice(i, i + batchSize);
+      const emailPromises = batch.map(subscriber => 
+        sgMail.send({
           to: subscriber.email,
           from: {
             email: "apavirooppaul10@gmail.com",
@@ -119,42 +123,51 @@ async function sendNewsletter() {
             "MMMM do, yyyy"
           )}`,
           html: emailContent,
-        });
+        }).catch(error => ({
+          error: true,
+          email: subscriber.email,
+          message: error.message
+        }))
+      );
 
-        console.log(`Newsletter sent successfully to ${subscriber.email}`);
-
-        // Add delay between emails to avoid rate limits
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      } catch (error) {
-        console.error(
-          `Failed to send newsletter to ${subscriber.email}:`,
-          error
-        );
-      }
+      const batchResults = await Promise.all(emailPromises);
+      results.push(...batchResults);
     }
 
-    console.log("Newsletter sending process completed");
+    const successCount = results.filter(r => !r.error).length;
+    const failureCount = results.filter(r => r.error).length;
+
+    return {
+      success: true,
+      message: `Newsletter sent to ${successCount} subscribers, ${failureCount} failed`,
+      results
+    };
   } catch (error) {
     console.error("Newsletter sending failed:", error);
+    return { success: false, error: error.message };
   }
 }
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("Authorization");
-  console.debug("Authorization header received:", authHeader); // Debugging step
-  console.debug("CRON_SECRET:", process.env.CRON_SECRET); // Debugging step
 
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.warn("Unauthorized access attempt detected."); // Logging step
-    return new Response("Unauthorized", { status: 401 });
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { 
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {
-    console.info("Attempting to send newsletter..."); // Logging step
-    await sendNewsletter();
-    console.info("Newsletter sent successfully."); // Logging step
-    return new Response("Newsletter sent successfully", { status: 200 });
+    const result = await sendNewsletter();
+    return new Response(JSON.stringify(result), { 
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
-    console.error("Newsletter sending failed:", error); // Logging step
-    return new Response("Failed to send newsletter", { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
