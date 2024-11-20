@@ -3,17 +3,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
-import LoadingSpinner from "../../components/LoadingSpinner";
-import { useState, useEffect } from "react";
-import TeamModal from "../../components/TeamModal";
 
+import LoadingSpinner from "@/app/components/LoadingSpinner";
+import TeamModal from "@/app/components/TeamModal";
+import { useState, useEffect } from "react";
+
+// Fetch data for the match
 async function getMatchDetails(id: string) {
   const res = await fetch(`/api/match/${id}`);
   if (!res.ok) throw new Error("Failed to fetch match details");
   return res.json();
 }
 
+
 export default function MatchDetails({ params }: { params: { id: string } }) {
+  const { id } = params;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
       <Link
@@ -23,8 +28,7 @@ export default function MatchDetails({ params }: { params: { id: string } }) {
         <ArrowLeftIcon className="w-5 h-5" />
         <span>Back to Matches</span>
       </Link>
-
-      <MatchContent id={params.id} />
+      <MatchContent id={id} />
     </div>
   );
 }
@@ -32,15 +36,23 @@ export default function MatchDetails({ params }: { params: { id: string } }) {
 function MatchContent({ id }: { id: string }) {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   interface Match {
     id: string;
-    competition: {
-      name: string;
-      emblem: string;
-    };
+    competition: { name: string; emblem: string };
     matchday: number;
     utcDate: string;
-    // Add other relevant fields as needed
+    status: string;
+    homeTeam: { id: string; name: string; shortName: string; crest: string };
+    awayTeam: { id: string; name: string; shortName: string; crest: string };
+    score: {
+      fullTime: { home: number; away: number };
+      halfTime: { home: number; away: number };
+    };
+    season: { startDate: string; endDate: string; currentMatchday: number };
+    goals?: { minute: number; scorer: string; team: string }[];
+    stage: string;
+    venue?: string;
   }
 
   const [match, setMatch] = useState<Match | null>(null);
@@ -73,8 +85,6 @@ function MatchContent({ id }: { id: string }) {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <div className="bg-white p-2 rounded-lg">
-              {" "}
-              {/* Added white background for competition logo */}
               <Image
                 src={match.competition.emblem}
                 alt={match.competition.name}
@@ -94,7 +104,7 @@ function MatchContent({ id }: { id: string }) {
             <p className="text-white text-sm">
               {new Date(match.utcDate).toLocaleDateString()}
             </p>
-            <p className="text-white text-sm">{match.status}</p>
+            <p className="text-white text-sm">Status: {match.status}</p>
           </div>
         </div>
       </div>

@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: Request) {
   const API_BASE_URL = "https://api.football-data.org/v4";
   const API_KEY = process.env.NEXT_PUBLIC_FOOTBALL_API_KEY;
-  const teamId = params.id;
+
+  // Extract `teamId` from the URL path
+  const url = new URL(request.url);
+  const pathSegments = url.pathname.split('/');
+  const teamId = pathSegments[pathSegments.length - 1];
+
+  if (!teamId) {
+    return NextResponse.json(
+      { error: "Team ID is required" },
+      { status: 400 }
+    );
+  }
 
   try {
     // Fetch team details
@@ -27,7 +35,7 @@ export async function GET(
     );
 
     if (!teamResponse.ok || !matchesResponse.ok) {
-      throw new Error(`API Error`);
+      throw new Error("API Error");
     }
 
     const teamData = await teamResponse.json();
