@@ -143,7 +143,7 @@ export async function GET(request: Request) {
   console.debug("Authorization header received:", authHeader); // Debugging step
   console.debug("CRON_SECRET:", process.env.CRON_SECRET); // Debugging step
 
-  if (authHeader !== `${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     console.warn("Unauthorized access attempt detected."); // Logging step
     return new Response("Unauthorized", { status: 401 });
   }
