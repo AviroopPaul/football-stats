@@ -138,18 +138,23 @@ async function sendNewsletter() {
     console.error("Newsletter sending failed:", error);
   }
 }
-
 export async function GET(request: Request) {
   const authHeader = request.headers.get("Authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  console.debug("Authorization header received:", authHeader); // Debugging step
+  console.debug("CRON_SECRET:", process.env.CRON_SECRET); // Debugging step
+
+  if (authHeader !== `${process.env.CRON_SECRET}`) {
+    console.warn("Unauthorized access attempt detected."); // Logging step
     return new Response("Unauthorized", { status: 401 });
   }
 
   try {
+    console.info("Attempting to send newsletter..."); // Logging step
     await sendNewsletter();
+    console.info("Newsletter sent successfully."); // Logging step
     return new Response("Newsletter sent successfully", { status: 200 });
   } catch (error) {
-    console.error("Newsletter sending failed:", error);
+    console.error("Newsletter sending failed:", error); // Logging step
     return new Response("Failed to send newsletter", { status: 500 });
   }
 }
